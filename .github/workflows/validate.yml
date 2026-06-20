@@ -1,0 +1,28 @@
+name: Validate Skill
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate AgentSkill
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate skill package
+        run: python scripts/validate_skill.py .
+
+      - name: Smoke-test extractor (no transcripts is a valid, warned result)
+        run: python scripts/extract_session.py . --out /tmp/metrics.json

@@ -1,0 +1,23 @@
+{
+  "skill_name": "how-did-you-do-that",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "A colleague keeps asking how I built the Data-leaks-skills skill with Claude. Can you write up a 'how did you do that' explainer for the work I did in c:/projects/skills/Data-leaks-skills — the prompts I used and why, which model and how many tokens, the skills and tools, and how long it actually took? Drop it as a markdown file in that folder.",
+      "expected_output": "A how-did-you-do-that.md in the target folder with a colleague-facing narrative plus a technical appendix. Real numbers (sessions, prompt count, model split, token breakdown by type, active vs wall-clock time, skills/tools) taken from the Claude Code transcripts via extract_session.py, not estimated. Includes a model-fit critique.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "explain what I did with AI in this project to my team lead — was opus even the right model for it or was I burning tokens for nothing?",
+      "expected_output": "Runs extract_session.py on the current/target folder, then produces the markdown explainer with particular attention to the model-fit section: judges whether the model+reasoning+speed fit the task using token totals, thinking-block counts and retry patterns, and consults claude-api for current pricing before any cost claim. Labels the cost estimate (exact/partial/estimated).",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "how did you do that? I want to document the full prompt-by-prompt process of this session including the dead ends and retries so the next person can reproduce it.",
+      "expected_output": "Reconstructs the chronological prompt story from the transcript, collapsing runs of continue/retry and explaining why each prompt was sent and what it altered, with honest mention of dead-ends. Distinguishes wall-clock span from active engaged time. One markdown file, narrative + appendix.",
+      "files": []
+    }
+  ]
+}
