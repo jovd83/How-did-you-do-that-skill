@@ -7,9 +7,18 @@ would have changed the outcome**.
 
 ## Always check current facts first
 
-Before any cost number or "model X would have been better" claim, consult the **`claude-api`
-skill** for current model IDs, capabilities, pricing, and reasoning options. Model lineups
-and prices change; do not answer from memory. Quote the pricing date/source in the appendix.
+Before any cost number or "model X would have been better" claim, get **current** facts —
+never answer pricing or model lineups from memory, they change constantly.
+
+- For **Claude/Anthropic** models, the `claude-api` skill is the fast authoritative source for
+  IDs, capabilities, reasoning options, and prices.
+- For **any other provider** present in the session (OpenAI, Google Gemini, Mistral, etc.),
+  **look up that provider's live pricing table** — see `references/pricing-sources.md` for the
+  model-id→provider map and the canonical URLs to fetch. A single explained session can span
+  providers (e.g. a Claude Code run that also called an OpenAI model over MCP); price each
+  model from its own provider's table and never blend rates.
+
+Quote the source URL and fetch date in the appendix.
 
 ## The four axes
 
@@ -47,7 +56,8 @@ Evaluate each only if the evidence makes it relevant.
 
 ## Turning tokens into a cost estimate
 
-Pricing is per million tokens and differs by type and model. Compute per model:
+Full procedure (provider-agnostic) is in `references/pricing-sources.md`. In short: map each
+model id present to its provider, fetch that provider's current pricing table, then per model:
 
 ```
 cost = (input_tokens        / 1e6) * input_price
@@ -59,10 +69,10 @@ cost = (input_tokens        / 1e6) * input_price
 - Cache **read** is much cheaper than fresh input; cache **write** is slightly more than
   input. Using one blended rate badly distorts the result — that's why the extractor keeps
   the four types separate.
-- Sum across models for the session total.
-- **Label the result**: *exact* (you have authoritative current prices for every model
-  present), *partial* (prices for some models/types only), or *estimated* (prices may be
-  stale). Never present an unlabeled number as fact.
+- Sum across models (and providers) for the session total; never blend rates across providers.
+- **Label the result**: *exact* (authoritative current prices for every model present),
+  *partial* (some models/types only), or *estimated* (prices may be stale). Never present an
+  unlabeled number as fact, and cite the source URL + fetch date.
 - If the user has the `token-usage-cost-report` skill and wants a rigorous, provenance-backed
   cost artifact, point them to it — this skill's estimate is a convenience figure.
 

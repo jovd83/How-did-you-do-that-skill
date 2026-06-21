@@ -4,6 +4,20 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-06-21
+
+### Added
+- `references/pricing-sources.md`: a model-id→provider map (Anthropic, OpenAI, Google Gemini,
+  Mistral, Cohere, DeepSeek, xAI, hosted Llama) plus the canonical **live** pricing-table URLs
+  to fetch, and the per-type cost formula. Cost figures must now be computed from the current
+  provider table at run time, never from memory.
+
+### Changed
+- `SKILL.md` and `references/model-fit.md`: cost/model-fit guidance is now provider-agnostic —
+  look up each present model's provider and fetch its current pricing table (the `claude-api`
+  skill stays the fast path for Claude); price each model from its own provider and never blend
+  rates across providers; cite source URL + fetch date and label exact/partial/estimated.
+
 ## [1.0.0] - 2026-06-20
 
 Initial release. Built and validated with the `skill-creator` workflow.
