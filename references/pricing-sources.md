@@ -11,7 +11,7 @@ cost section, and label the number `exact` / `partial` / `estimated` accordingly
 
 | Model id pattern | Provider | Where to get current prices |
 |---|---|---|
-| `claude-*`, `anthropic.*`, `us.anthropic.*` | **Anthropic** | Prefer the `claude-api` skill (fast, authoritative for Claude). Else: https://www.anthropic.com/pricing and https://docs.claude.com/en/docs/about-claude/pricing |
+| `claude-*`, `anthropic.*`, `us.anthropic.*` | **Anthropic** | Prefer the `claude-api` skill (fast, authoritative for Claude). Else: https://platform.claude.com/docs/en/about-claude/pricing (API) and https://claude.com/pricing (plans) |
 | `gpt-*`, `o1*`, `o3*`, `o4*`, `chatgpt-*` | **OpenAI** | https://openai.com/api/pricing/ and https://platform.openai.com/docs/pricing |
 | `gemini-*`, `models/gemini-*` | **Google (Gemini API)** | https://ai.google.dev/gemini-api/docs/pricing and https://cloud.google.com/vertex-ai/generative-ai/pricing |
 | `mistral-*`, `mixtral-*`, `magistral-*` | **Mistral** | https://mistral.ai/pricing |
@@ -61,3 +61,5 @@ do not blend rates across providers.
 
 If the user wants a rigorous, provenance-backed cost artifact rather than this convenience
 figure, point them to the `token-usage-cost-report` skill.
+
+This file is for the story's **estimate**. For an auditable figure, the `token-usage-cost-report` skill keeps its own, stricter pricing rules: official provider pages only, and no estimate labelled as exact.

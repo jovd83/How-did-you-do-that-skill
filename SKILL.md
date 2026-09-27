@@ -3,7 +3,7 @@ name: how-did-you-do-that
 description: "Use when the user wants to show a colleague (or themselves) how they got an AI result and answer \"how did you do that\" — to document their prompting process, do a retro on an AI session, or respond to questions like \"explain how I built this with AI\", \"write up my Claude session\", \"what prompts did I use\", \"how much did this cost in tokens\", \"which model/skills/tools/MCP did I use\", or \"was this the right model for the job\". It examines the logged session transcripts for a folder (Claude Code JSONL under ~/.claude/projects, best-effort for other tools) and produces one Markdown file: a colleague-friendly narrative plus a full technical appendix (prompts and why each was sent, model + reasoning + speed, token breakdown by type, tools/skills/MCP/sub-agents, elapsed vs active time) and a model-fit critique. Trigger it even when the user only gestures at \"explain what I did with AI here\" without naming transcripts or tokens."
 license: MIT
 metadata:
-  version: "1.1.1"
+  version: "1.1.2"
   maturity: "stable"
   author: "jovd83"
   dispatcher-category: "documentation"
@@ -107,6 +107,11 @@ prices or model IDs, they change constantly:
 
 See `references/model-fit.md` for how to reason about each axis (bigger/smaller model, more/less
 reasoning, faster/slower) and how to turn token counts into a labelled cost estimate.
+
+The cost figure here is an **estimate** for the story, derived from transcripts; label it so.
+When the user needs an auditable number (for a budget, an invoice check, or a cost comparison
+across repositories), hand off to the `token-usage-cost-report` skill, which only reports
+costs it can trace to runtime evidence and official pricing.
 
 ### 6. Write the Markdown file
 
