@@ -58,7 +58,7 @@ naming transcripts or tokens.
 Install with the [`skills` CLI](https://github.com/vercel-labs/skills):
 
 ```bash
-npx skills add jovd83/How-did-you-do-that-skill
+npx skills add jovd83/how-did-you-do-that
 ```
 
 The only runtime dependency is **Python 3** (standard library only — no packages to install).
