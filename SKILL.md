@@ -3,16 +3,9 @@ name: how-did-you-do-that
 description: "Use when the user wants to show a colleague (or themselves) how they got an AI result and answer \"how did you do that\" — to document their prompting process, do a retro on an AI session, or respond to questions like \"explain how I built this with AI\", \"write up my Claude session\", \"what prompts did I use\", \"how much did this cost in tokens\", \"which model/skills/tools/MCP did I use\", or \"was this the right model for the job\". It examines the logged session transcripts for a folder (Claude Code JSONL under ~/.claude/projects, best-effort for other tools) and produces one Markdown file: a colleague-friendly narrative plus a full technical appendix (prompts and why each was sent, model + reasoning + speed, token breakdown by type, tools/skills/MCP/sub-agents, elapsed vs active time) and a model-fit critique. Trigger it even when the user only gestures at \"explain what I did with AI here\" without naming transcripts or tokens."
 license: MIT
 metadata:
-  version: "1.1.2"
+  version: "1.1.3"
   maturity: "stable"
   author: "jovd83"
-  dispatcher-category: "documentation"
-  dispatcher-layer: "analysis"
-  dispatcher-lifecycle: "active"
-  dispatcher-risk: "low"
-  dispatcher-writes-files: "true"
-  dispatcher-capabilities: "session-reconstruction, prompt-history, token-accounting, model-fit-critique, ai-usage-explainer, transcript-analysis"
-  dispatcher-accepted-intents: "explain_ai_session, document_prompting_process, account_session_tokens, critique_model_choice, write_how_did_you_do_that"
 ---
 
 # How did you do that
