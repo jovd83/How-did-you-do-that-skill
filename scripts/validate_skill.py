@@ -17,8 +17,11 @@ REQUIRED_FILES = [
     "LICENSE",
     "evals/evals.json",
     "scripts/extract_session.py",
-    "references/report-template.md",
-    "references/model-fit.md",
+    "scripts/render_report.py",
+    "assets/report-template.md",
+    "references/review-guide.md",
+    "references/pricing-sources.md",
+    "references/log-formats.md",
 ]
 
 REQUIRED_SECTIONS = [

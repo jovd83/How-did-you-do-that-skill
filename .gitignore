@@ -1,4 +1,9 @@
+# Reports and metrics from running the skill on this repository
+how-did-you-do-that*.md
+!README.md
+metrics.json
+*.timeline.md
+prices.json
 session-metrics.json
-how-did-you-do-that.md
 *-workspace/
 __pycache__/

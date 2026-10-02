@@ -1,9 +1,9 @@
 ---
 name: how-did-you-do-that
-description: "Use when the user wants to show a colleague (or themselves) how they got an AI result and answer \"how did you do that\" — to document their prompting process, do a retro on an AI session, or respond to questions like \"explain how I built this with AI\", \"write up my Claude session\", \"what prompts did I use\", \"how much did this cost in tokens\", \"which model/skills/tools/MCP did I use\", or \"was this the right model for the job\". It examines the logged session transcripts for a folder (Claude Code JSONL under ~/.claude/projects, best-effort for other tools) and produces one Markdown file: a colleague-friendly narrative plus a full technical appendix (prompts and why each was sent, model + reasoning + speed, token breakdown by type, tools/skills/MCP/sub-agents, elapsed vs active time) and a model-fit critique. Trigger it even when the user only gestures at \"explain what I did with AI here\" without naming transcripts or tokens."
+description: "Use when the user wants to know how a piece of AI-assisted work was done, either to review how well the AI did the task or to replicate it on another computer or for another person. Reconstructs the logged sessions of Claude Code, GitHub Copilot (VS Code chat or CLI) or Codex for a project folder and writes one Markdown report with a fixed structure: the original and follow-up prompts, model, context window, mode, reasoning effort, tokens per model and type, cost, skills, plugins, MCP servers, sub-agents, hooks, non-AI tools and libraries, what the human and the AI did, what was achieved, a review scorecard and replication steps. Trigger on \"how did you do that\", \"write up this AI session\", \"what prompts did I use\", \"which model or settings did it use\", \"how much did this cost\", \"was this done well\", \"retro on this agent run\" or \"I want to redo this on my work laptop\", even when nobody mentions logs or transcripts."
 license: MIT
 metadata:
-  version: "1.1.3"
+  version: "2.0.0"
   maturity: "stable"
   author: "jovd83"
 ---
@@ -12,140 +12,170 @@ metadata:
 
 ## What this skill is for
 
-You do something impressive with AI, a colleague asks **"how did you do that?"**, and
-you want a clear artifact you can hand them instead of re-explaining from memory. This
-skill reconstructs the real session from its logs and writes a single Markdown file that
-answers: what was the opening prompt, which follow-ups and *why*, where it ran, which
-model at what reasoning/speed, how many tokens of each type, which tools/skills/MCP, how
-long it actually took — and whether the model choice was right.
+Someone did something with an AI assistant, and now a person wants to know how. The report this
+skill writes serves two readers:
 
-The output has two halves in one file: a **narrative** anyone can read, and a **technical
-appendix** with every metric tabulated. Both come from the same evidence.
+1. **The reviewer** wants to judge how well the task was done: was the goal met, was the result
+   checked, how much steering did the human have to do, was the model and setup a good fit, and
+   what did it cost.
+2. **The replicator** wants to do the same thing elsewhere: which tool, model and settings, which
+   skills, plugins, MCP servers and programs, which prompts in which order, and what to watch out
+   for.
 
-## The golden rule: measure, don't guess
+Every report has the same 12 sections in the same order (`assets/report-template.md`). That fixed
+shape is the point: reports about different tasks, people and tools can be compared side by side,
+and a reader always knows where to look. Write freely inside a section, but never add, drop,
+rename or reorder the numbered headings.
 
-The whole value of this artifact is that the numbers are *real*. Token counts, model IDs,
-timings, and tool counts come from the logs — never estimate them from the conversation in
-front of you. The `extract_session.py` script does this deterministically. Your job is to
-**interpret** what the script can't: why each prompt was sent, what it changed, and whether
-the setup fit the task. If a number isn't in the evidence, say so rather than inventing it.
+## Ground rules
+
+- **Measure, don't guess.** Token counts, times, model ids, file lists and tool counts come from
+  `scripts/extract_session.py`, and `scripts/render_report.py` copies them into the report. Never
+  type such a number yourself and never estimate one from the conversation you are in. Your job is
+  the part a script can't do: why each prompt was sent, what it changed, how the work went, the
+  ratings and the replication steps.
+- **Missing is not zero.** When the logs don't record something (Copilot often has no token
+  counts, no harness logs the exact reasoning budget), the report says "Not recorded in the logs".
+  Say what is missing rather than leaving it out.
+- **No AI, no story.** When no session logs exist for the folder or period, the report says that no
+  AI was used as far as the logs show. The renderer handles that case; don't invent a narrative.
+- **Evidence over adjectives.** Every rating and claim in the report should point to something a
+  reader can check: a prompt number, a file, a command, a number in the appendix.
 
 ## Workflow
 
-### 1. Identify the target folder
+### 1. Settle the scope with the user
 
-This is the folder where the work happened (the project/workspace the user is asking
-about). Default to the current working directory if the user is clearly asking about
-"this" work. If ambiguous, ask which folder.
+Three things decide what the report covers. Settle all of them before extracting anything, in one
+message to the user, and skip what the user already told you.
 
-### 2. Run the extractor
+- **Folder.** The project folder where the work happened. If the user says "this" or "here", use
+  the current working directory.
+- **Which sessions.** Run the listing first, so the question comes with real choices:
+
+  ```bash
+  python scripts/extract_session.py "<folder>" --list
+  ```
+
+  It prints every session found for the folder (Claude Code, Copilot, Codex), with id, tool, start
+  and end time in local time, prompt count, AI turns, title and first prompt. Sessions a tool
+  started by itself (sub-agents, Codex's automatic reviews) are already folded into their parent
+  session, so don't offer them as separate choices. A session with 0 AI turns never got going and
+  can be pointed out as such. A folder often holds sessions about
+  unrelated tasks, and mixing them ruins both the review and the replication. So if the user has
+  not said which work they mean, show the list and ask them to choose one of these:
+  - particular sessions → `--session <id or id prefix>` (repeatable)
+  - a period → `--since 2026-09-26 --until 2026-09-28` (local time; a bare `--until` date
+    includes that whole day; a time can be added as `2026-09-26T14:00`)
+  - the most recent ones → `--latest N`
+  - everything → no option
+
+  Translate what the user says ("yesterday afternoon", "the last one", "the Copilot chat about the
+  login page") into these options yourself, and confirm only if it is ambiguous.
+- **Where to save the report.** Ask, and suggest the project root as the default:
+  `<folder>/how-did-you-do-that-<YYYY-MM-DD>.md`. Mention that the report quotes the prompts word
+  for word (likely secrets are masked), which matters if the folder is a shared repository.
+
+If the session being explained is the one you are running in, that's fine: the report covers it up
+to now.
+
+### 2. Extract the metrics
 
 ```bash
-python scripts/extract_session.py "<target-folder>" --out "<target-folder>/session-metrics.json"
+python scripts/extract_session.py "<folder>" [--session ... | --since ... --until ... | --latest N] --out "<work dir>/metrics.json"
 ```
 
-This locates the Claude Code transcripts for that folder (it reproduces Claude Code's
-`~/.claude/projects/<encoded-path>/` naming), parses **every** session for the folder, and
-merges them into one metrics bundle. It prints a summary and writes the full JSON.
+Use a temporary or scratch folder as the work dir, not the project, so the repository stays clean.
+This writes `metrics.json` and a readable digest next to it, `metrics.timeline.md`. Read the
+printed summary and any warnings; they flag things like a Codex session that switched models.
 
-If the folder isn't where Claude Code ran, point it directly at transcripts:
+The script finds Claude Code transcripts (including sub-agent transcripts), VS Code Copilot Chat
+sessions, Copilot CLI logs and Codex logs for the folder. If the user's logs live somewhere
+unusual, pass them directly with `--transcripts <file, folder or glob>`; the format is detected per
+file. See `references/log-formats.md` for what each tool records and what it doesn't.
+
+### 3. Get prices, only if the cost isn't reported
+
+Look at `usage.reported_cost` in `metrics.json`. When `complete` is true, Claude Code reported the
+cost itself and covered all selected work: skip this step.
+
+Otherwise, the cost has to be computed from current list prices. Prices change often, so look them
+up now and never quote them from memory. `references/pricing-sources.md` maps model ids to
+providers, lists the pages to fetch, and gives the `prices.json` format. For GitHub Copilot, the
+cost is premium requests (requests × model multiplier), not tokens; the same file explains it.
+Save the result as `<work dir>/prices.json`.
+
+### 4. Render the skeleton
 
 ```bash
-python scripts/extract_session.py --transcripts "<dir-or-glob-of-jsonl>" --out metrics.json
+python scripts/render_report.py "<work dir>/metrics.json" --prices "<work dir>/prices.json" --out "<report path>"
 ```
 
-The JSON `warnings` array tells you if no transcripts were found, or if non-Claude-Code
-logs (Codex, Cursor, Gemini/antigravity, generic chat logs) were detected in the folder.
+Leave out `--prices` when the cost was reported. Add `--title "..."` if the session title doesn't
+describe the work well. The renderer fills every measured part of the template and leaves
+`<!-- WRITE: ... -->` slots for you; it prints how many.
 
-### 3. Read the evidence
+### 5. Read the evidence
 
-Read the emitted JSON in full. Then **read the relevant transcript(s)** — the JSON gives
-you the prompts and metrics, but to explain *why* a prompt was sent and *what it altered*
-you need to see the assistant's responses between prompts. Skim the assistant turns that
-follow each human prompt; that is where the "reason" and "what changed" come from.
+Read `metrics.timeline.md` from top to bottom. It has one block per human prompt: the prompt, the
+tools and commands that followed, the files written, sub-agents, errors, refusals, and the AI's
+last reply before the next prompt. That is enough to explain almost every prompt.
 
-For best-effort other-tool logs, open the files listed under `other_tool_logs` and pull
-out whatever you can (usually prompts and timestamps; rarely tokens/model). Be explicit in
-the report about what was and wasn't available from those sources.
+Open a raw transcript only to settle a specific question, such as why a step failed. Transcripts
+run to tens of megabytes, so search them for the timestamp the timeline gives rather than reading
+them whole.
 
-### 4. Reconstruct the prompt story
+### 6. Fill the slots
 
-For each human prompt in `prompts.list` (they're in chronological order across all merged
-sessions), determine:
+Replace every `<!-- WRITE ... -->` with your text. Keep the measured content around the slots as it
+is. Section by section:
 
-- **What was asked** — paraphrase the intent, don't just quote 500 words.
-- **Why it was sent** — was it the opening ask? a correction? a refinement? a "continue"?
-  a reaction to something the assistant got wrong or a new idea? The text plus the
-  preceding assistant turn tells you.
-- **What it altered** — what changed in the result because of this prompt.
+- **1. Summary**: one sentence each. The verdict repeats the overall rating from section 10.
+- **2. The request**: restate the original prompt in plain words for someone who wasn't there.
+- **3. Follow-up prompts**: for each row, the kind, why it was sent (the reply before it usually
+  tells you: something went wrong, something was missing, the user had a new idea) and what it
+  changed. Runs of "continue" mean "keep going, the direction is right". You may merge
+  consecutive rows like that into one, keeping the numbers ("5–7").
+- **5. What drove the cost**: name the actual driver. On long agent sessions it is usually the
+  context being re-read from cache on every turn, so cache-read tokens dominate.
+- **6. Used for**: what each skill, MCP server, plugin or hook contributed, from the timeline.
+- **7. Needed to replicate**: separate what a replicator must install from what was incidental
+  (`ls`, `cat` and the like never matter).
+- **8. What was done**: the human's steering and the AI's approach, in phases, citing prompt
+  numbers. Dead ends and retries are the most useful part for both readers; name them plainly.
+- **9. What was achieved**: deliverables, the evidence that they work (tests run, checks passed,
+  the user accepting the result) and what was left open. "It was written" is not evidence that it
+  works.
+- **10. Review**: rate each criterion Good, Partly, Poor or Can't tell, with evidence. Use
+  `references/review-guide.md`; it covers each criterion and the model-fit judgment.
+- **11. Replicate it**: concrete steps that someone on another computer could follow. Point to
+  prompts by number from appendix B instead of copying them again. The one-shot prompt folds the
+  corrections into a single prompt so the replicator can skip the dead ends; put it in a fenced
+  block. Under "Watch out for", name the paths, accounts and secrets specific to this machine.
 
-Short prompts like "continue", "retry", "go on" are real and meaningful — they usually mean
-"the previous direction was right, keep going" or "that failed, try again". Group runs of
-them rather than listing each separately, and explain what the user was steering.
+You may improve the H1 title. Don't touch the numbered headings.
 
-### 5. Do the model-fit critique
+### 7. Check and hand over
 
-Using the model(s), `speed_distribution`, `reasoning.thinking_blocks`, token totals, and
-how hard the task actually was, judge whether the setup fit the work. **Only raise an
-alternative when it genuinely applies** — don't manufacture all four directions.
+```bash
+python scripts/render_report.py --check "<report path>"
+```
 
-Get current facts before making cost or "better model" claims — never rely on memory for
-prices or model IDs, they change constantly:
+It fails while any slot is unfilled or a section is missing or out of order. Fix and rerun until it
+passes.
 
-- For **Claude/Anthropic** models, consult the `claude-api` skill.
-- For **any other provider** in the session (OpenAI, Gemini, Mistral, …), look up that
-  provider's **live pricing table** — `references/pricing-sources.md` has the model-id→provider
-  map and the canonical URLs to fetch with WebFetch/WebSearch. Price each model from its own
-  provider's table; one session can span providers. Cite the source URL and fetch date.
+Then tell the user:
+- where the report is
+- the headline in two or three lines: the goal, the verdict, the time and the cost
+- how the cost was obtained (reported by the tool, or estimated from which price page)
+- how many likely secrets were masked
 
-See `references/model-fit.md` for how to reason about each axis (bigger/smaller model, more/less
-reasoning, faster/slower) and how to turn token counts into a labelled cost estimate.
-
-The cost figure here is an **estimate** for the story, derived from transcripts; label it so.
-When the user needs an auditable number (for a budget, an invoice check, or a cost comparison
-across repositories), hand off to the `token-usage-cost-report` skill, which only reports
-costs it can trace to runtime evidence and official pricing.
-
-### 6. Write the Markdown file
-
-Write to `<target-folder>/how-did-you-do-that.md` (or a name the user prefers). Follow the
-template in `references/report-template.md` exactly — narrative first, technical appendix
-second. Fill the facts table from the JSON; write the narrative from the transcripts.
-
-Keep the narrative honest and specific: real prompt counts, real hours, real dead-ends.
-A colleague learns more from "it took 3 retries to get the regex right" than from a glossy
-summary. Convert raw seconds to human units (e.g. "≈3.2 h of active work spread over 5
-days"). Distinguish **wall-clock span** (first to last event) from **active engaged time**
-(the script's gap-filtered estimate) — they're often very different and that difference is
-itself interesting.
-
-### 7. Tell the user where it is
-
-Report the file path and give a one-paragraph summary of the headline facts (model, prompts,
-tokens, time). Offer to tweak depth or audience (more technical, more story, shorter).
-
-## Notes on the data
-
-- **Where it ran**: `environment.entrypoints` — `claude-vscode` = the VS Code / Claude Code
-  IDE extension; `cli` = terminal; other values map to desktop/web. Combine with
-  `claude_code_versions` for the exact tool version.
-- **Reasoning**: Claude Code doesn't log the exact thinking budget. Presence and volume of
-  `thinking` blocks (`reasoning.thinking_blocks`, `thinking_chars`) is the proxy — report it
-  as "extended reasoning was used on N turns", not a fabricated budget number.
-- **Speed**: `speed: "standard"` vs `"fast"` distinguishes normal vs fast-mode Opus.
-- **Tokens**: report all four types separately — `input`, `output`, `cache_creation`,
-  `cache_read`. Cache-read tokens are usually the largest and cheapest; lumping them into
-  one "total" is misleading, which is why the appendix breaks them out.
-- **Skills vs MCP vs tools**: `skills_invoked` (the `Skill` tool), `mcp_tools` (`mcp__*`
-  names), and `tool_calls` (built-ins like Bash/Read/Edit) are tracked separately because
-  colleagues usually want to know which *skills* were used, distinct from raw tool calls.
-- **Multiple models in one bundle**: a session often spans models (e.g. a cheap model for
-  routing, Opus for the hard part). `tokens_by_model` shows the split; explain it rather
-  than averaging it away.
+Also suggest scanning the report with a secret or PII scanner (the `leak-canary` skill, if
+installed) before sharing it outside the team. Offer to adjust the depth or the audience.
 
 ## When there's nothing to report
 
-If no transcripts are found and no other-tool logs exist, don't invent a story. Tell the
-user plainly that no AI session logs were found for that folder, show the path the script
-searched, and ask whether the work happened elsewhere (different folder, a tool that
-doesn't keep logs, or logs that were cleared).
+If `--list` finds no sessions, say so plainly and show where the script looked (the "searched"
+part of its output). Ask whether the work happened in another folder, in a tool that keeps no
+logs, or whether the logs were cleared. If the user still wants the report, render it anyway: it
+states that no AI was used and passes the check without further writing.

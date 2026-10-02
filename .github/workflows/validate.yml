@@ -24,5 +24,11 @@ jobs:
       - name: Validate skill package
         run: python scripts/validate_skill.py .
 
-      - name: Smoke-test extractor (no transcripts is a valid, warned result)
-        run: python scripts/extract_session.py . --out /tmp/metrics.json
+      - name: Unit tests (synthetic Claude Code, Copilot and Codex logs)
+        run: python -m unittest discover -s tests -v
+
+      - name: Smoke-test extract, render and check (no logs gives a valid no-AI report)
+        run: |
+          python scripts/extract_session.py . --out /tmp/metrics.json
+          python scripts/render_report.py /tmp/metrics.json --out /tmp/report.md
+          python scripts/render_report.py --check /tmp/report.md

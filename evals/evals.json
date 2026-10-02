@@ -3,21 +3,50 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "A colleague keeps asking how I built the Data-leaks-skills skill with Claude. Can you write up a 'how did you do that' explainer for the work I did in c:/projects/skills/Data-leaks-skills — the prompts I used and why, which model and how many tokens, the skills and tools, and how long it actually took? Drop it as a markdown file in that folder.",
-      "expected_output": "A how-did-you-do-that.md in the target folder with a colleague-facing narrative plus a technical appendix. Real numbers (sessions, prompt count, model split, token breakdown by type, active vs wall-clock time, skills/tools) taken from the Claude Code transcripts via extract_session.py, not estimated. Includes a model-fit critique.",
-      "files": []
+      "name": "review-claude-subagents",
+      "prompt": "My team lead wants to know whether the improvement round I did on the test-checklist-generator skill on 19 September was done well, and how I did it. Write the how-did-you-do-that report for c:/projects/skills/test-checklist-generator, only session 22d20d09, and save it as report.md in the outputs folder.",
+      "expected_output": "One report.md with the fixed 12-section structure that passes render_report.py --check. It covers only session 22d20d09, counts tokens once per API message, includes the sub-agent usage as its own rows, states the cost basis, and rates the six review criteria with evidence.",
+      "files": [],
+      "assertions": [
+        "report.md exists in the outputs folder",
+        "render_report.py --check passes on report.md (all 12 sections in order, no unfilled slots)",
+        "The original prompt of session 22d20d09 is quoted word for word",
+        "The token table has a sub-agent row",
+        "The total output tokens in the report match the extractor's deduplicated total (within 2%)",
+        "The cost has a stated basis (reported by the tool, or an estimate with a source)",
+        "All six review criteria carry a rating (Good, Partly, Poor or Can't tell)",
+        "Only one session is covered",
+        "No report or metrics files were written into the target project folder"
+      ]
     },
     {
       "id": 2,
-      "prompt": "explain what I did with AI in this project to my team lead — was opus even the right model for it or was I burning tokens for nothing?",
-      "expected_output": "Runs extract_session.py on the current/target folder, then produces the markdown explainer with particular attention to the model-fit section: judges whether the model+reasoning+speed fit the task using token totals, thinking-block counts and retry patterns, and consults claude-api for current pricing before any cost claim. Labels the cost estimate (exact/partial/estimated).",
-      "files": []
+      "name": "replicate-codex-session",
+      "prompt": "I want to redo what Codex did in C:\\projects\\VS_prj\\SkillRework on the morning of 27 September (the telemetry hooks session, rollout-2026-09-27T09-10-45) on my work laptop. Give me the full how-did-you-do-that write-up with everything I'd need to replicate it, only that Codex session. Save it as report.md in the outputs folder.",
+      "expected_output": "One report.md that passes the check and is built from the Codex log of that session: model, effort, approval policy and sandbox in the setup, a replication checklist, numbered steps and a one-shot prompt in a fenced block, and a cost estimate with a cited pricing source and date.",
+      "files": [],
+      "assertions": [
+        "report.md exists in the outputs folder",
+        "render_report.py --check passes on report.md",
+        "The report names Codex as the tool and gpt-5.5 as the model",
+        "The setup states the reasoning effort and the approval policy or sandbox",
+        "The replicate section has a checklist and a one-shot prompt in a fenced block",
+        "The cost is an estimate that cites a pricing source and a date",
+        "Only one session is covered"
+      ]
     },
     {
       "id": 3,
-      "prompt": "how did you do that? I want to document the full prompt-by-prompt process of this session including the dead ends and retries so the next person can reproduce it.",
-      "expected_output": "Reconstructs the chronological prompt story from the transcript, collapsing runs of continue/retry and explaining why each prompt was sent and what it altered, with honest mention of dead-ends. Distinguishes wall-clock span from active engaged time. One markdown file, narrative + appendix.",
-      "files": []
+      "name": "ask-scope-first",
+      "prompt": "explain to my colleague how I built the test-checklist-generator skill with AI (c:/projects/skills/test-checklist-generator)",
+      "expected_output": "Because the folder holds several sessions and the user named neither the sessions nor a save location, the skill lists the sessions and asks which ones to cover and where to save the report (suggesting the project root), instead of writing a report straight away.",
+      "files": [],
+      "assertions": [
+        "A question for the user was produced instead of a report",
+        "The question lists at least two of the sessions found",
+        "The question offers the selection options (sessions, period, latest, all)",
+        "The question asks where to save the report and suggests the project root"
+      ]
     }
   ]
 }
